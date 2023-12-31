@@ -1,0 +1,394 @@
+---
+title: "COMPARACIÓN DE RESULTADOS DE MODELOS DE REGRESIÓN"
+author: "Jairo Sánchez"
+date: "2023-12-26"
+output: html_document
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse) # Librería para ordenamiento de arreglos de datos, incluye ggplot2
+library(Metrics) # Librería para calculo de métricas de evaluación valores reales vs valores predichos
+library(plotly) # gráficos interactivos
+library(knitr) # Libería para crear tablas en archivos Knit html# gráficos interactivos
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Carga de datos actualizados en la parte anterior
+Train <- as.data.frame(read_csv("Train.csv", col_types = cols(chas = col_factor()
+                                                , rad = col_factor())))
+Test <- as.data.frame(read_csv("Test.csv", col_types = cols(chas = col_factor(), 
+                                              rad = col_factor())))
+RMSE_5 <- read_csv("RMSE_4.csv")
+```
+
+```{=html}
+<center>
+<h1>Parte 6: Regresiones Polinómicas</h1>
+</center>
+```
+## Introducción
+
+Hasta el momento, todos los modelos planteados son lineales, es decir, se ha intentado explicar el comportamiento de la variable de respuesta con una línea recta. Con base en los detalles observados gráficamente en los modelos de regresión lineal simple y regresión lineal múltiple, además de los resultados comparativos del RMSE, se podría plantear que la variabilidad de *medv* obedece a un modelo no lineal cuadrático. En esta parte del documento se plantean varios modelos cuadráticos: dos con una única variable, uno con interacción de dos variables, uno con interacción de tres variables y el último con interacción de cuatro variables. Esto con el fin de validar si efectivamente la variable de respuesta se ajusta de mejor manera a una regresión polinómica grado 2.
+
+### **6.1. Regresiones polinómicas cuadráticas con una variable**
+
+Las dos variables con mayor nivel de correlación (observadas en la primera parte del documento) son *lstat* y *rm* para estas dos variables se plantearán dos modelos cuadráticos.
+
+#### **6.1.1 Regresión cuadrática con *lstat* como variable independiente**
+
+El modelo cuadrático a evaluar tiene la siguiente forma
+
+$$
+ medv = \beta_0 +\beta_1*lstat + \beta_2*(lstat)²
+$$
+
+Los coeficientes de la regresión se observan así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_lstat <-lm(medv~lstat+I(lstat^2),data = Train) 
+summary(lmpoly_lstat)
+```
+
+El modelo presenta un error estándar residual de 5.51 el cual es menor que el valor del mismo error para la regresión lineal simple, así mismo el valor de R cuadrado ajustado es mayor en este caso. Es posible concluirque el modelo cuadrático con *lstat* explica de mejor manera la variabilidad de *medv* en comparación con el modelo de regresión lineal simple con la misma variable independiente.
+
+$$
+ medv = 43.48 - 2.41 * lstat + 0.04 *(lstat)²
+$$
+
+Usando la ecuación descrita, los resultados de la predicción de la variable dependiente se observan así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_lstat.p <- predict(lmpoly_lstat,Test)
+data_reg <- data.frame(Test, RNL2_lstat = round(lmpoly_lstat.p,2))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_RNL2_lstat <- plot_ly(data = data_reg, x = ~lstat) # Definición básica de la gráfica
+fig_RNL2_lstat <- fig_RNL2_lstat %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              name = 'medv_real',
+                              type="scatter")
+fig_RNL2_lstat <- fig_RNL2_lstat %>% add_trace(y = ~RNL2_lstat, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              name = 'medv_RNL2_lstat',
+                              type="scatter")
+fig_RNL2_lstat <- fig_RNL2_lstat %>% layout(title = list(text ='Regresión polinómica grado 2 - variable: lstat',
+                                                     y = 0.98, x = 0.1),
+                                            plot_bgcolor='#e5ecf6',
+                                            xaxis = list(title = 'lstat'),
+                                            yaxis = list(title = 'medv'))
+fig_RNL2_lstat 
+```
+
+Al igual que los modelos estudiados hasta el momento, el modelo cuadrático con la variable independiente lstat presenta deficiencias para la predicción de los resultados del valor medio de las casas cuando estos, en su valor real, están por encima de 37.5 (aproximadamente), en este caso el modelo predice como valor más alto 36.4 mientras que los valores reales presentan como valor máximo 50.
+
+#### **6.1.2 Regresión cuadrática con *rm* como variable independiente**
+
+El modelo cuadrático con la variable independiente *rm* tiene la siguiente forma
+
+$$
+ medv = \beta_0 +\beta_1*rm + \beta_2*(rm)²
+$$
+
+Una vez calculados los coeficientes, el resultado es el siguiente:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_rm <-lm(medv~rm+I(rm^2),data = Train) 
+summary(lmpoly_rm)
+```
+
+En este caso el error estándar residual es de 6.36, que es un poco menor que el observado en la regresión lineal simple, en el caso del R cuadrado ajustado también tiene una leve mejoría, de esto se concluye inicialmente que el modelo cuadrático con *rm* es relativamente mejor que el lineal. Cabe resaltar que al comparar los resultados de este modelo con el cuadrático para la variable lstat ,los resultados no se observan mejores pues el error cuadrático medio es mayor y el valor de R cuadrado ajustado es menor.
+
+$$
+ medv = 70.63 - 24.21 * rm + 2.60 *(rm)²
+$$
+
+Con esta ecuación, las predicciones se observan así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_rm.p <- predict(lmpoly_rm,Test)
+data_reg <- data.frame(data_reg, RNL2_rm = round(lmpoly_rm.p,2))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_RNL2_rm <- plot_ly(data = data_reg, x = ~rm) # Definición básica de la gráfica
+fig_RNL2_rm <- fig_RNL2_rm %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              name = 'medv_real',
+                              type="scatter")
+fig_RNL2_rm <- fig_RNL2_rm %>% add_trace(y = ~RNL2_rm, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              name = 'medv_RNL2_rm',
+                              type="scatter")
+fig_RNL2_rm <- fig_RNL2_rm %>% layout(title = list(text ='Regresión polinómica grado 2 - variable: rm',
+                                                     y = 0.98, x = 0.1),
+                                            plot_bgcolor='#e5ecf6',
+                                            xaxis = list(title = 'rm'),
+                                            yaxis = list(title = 'medv'))
+fig_RNL2_rm
+```
+
+Gráficamente se puede observar que los resultados de la predicción tienden a estar "centrados" respecto a la dispersión de los datos reales, adicionalmente en esta dispersión existen puntos considerablemente distantes de la concentración, situación que aumenta el error del modelo, por ejemplo para el valor de rm de 6.68 el valor *medv* es de 50 y la predicción es un valor cercano a 25.
+
+### 6.2. Regresiones polinómicas cuadráticas con múltiples variables
+
+En esta sección se plantean tres modelos grado 2 con más de una variable. El primero con dos variables: *rm* y *lstat*, el segundo con tres variables: *rm*, *lstat* y *ptratio*, y el último con las variables *rm*, *lstat*, *ptratio* y *chas0*.
+
+#### **6.2.1 Regresión cuadrática con *lstat* y *rm* como variables independientes**
+
+El modelo grado 2 de dos variables obedece al siguiente planteamiento
+
+$$
+ medv = \beta_0 +\beta_1*lstat+\beta_2*rm+\beta_3*(lstat*rm)+\beta_4*(lstat)^2+\beta_5*(rm)²
+$$
+
+Así, los coeficientes calculados serían:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_2vars <-lm(medv~lstat+rm+I(lstat*rm)+I(lstat^2)+I(rm^2),data = Train) 
+summary(lmpoly_2vars)
+```
+
+El cálculo de coeficientes presenta como resultado inicial un p-valor superior a 0.05 para la variable *lstat*, resultado con el que se puede presentar el valor de $\beta_1$ como cero en el modelo de ecuación anteriormente planteada. Con este resultado se hace un replanteamiento del modelo de regresión excluyendo la variable en mención, es decir:
+
+$$
+ medv = \beta_0 +\beta_1*rm+\beta_2*(lstat*rm)+\beta_4*(lstat)^2+\beta_5*(rm)^2
+$$
+
+En este orden de ideas, los resultados de los nuevo coeficientes serían:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_2vars <-lm(medv~rm+I(lstat*rm)+I(lstat^2)+I(rm^2),data = Train) 
+summary(lmpoly_2vars)
+```
+
+La exclusión de la variable genera un modelo menos complejo (menos variables), y resultados prácticamente iguales en cuanto al valor del error estándar residual y el coeficiente R cuadrado ajustado.
+
+De los tres modelos evaluados hasta el momento, este es el que presenta el menor error estándar residual y el mayor coeficiente de R cuadrado ajustado. Con los coeficientes calculados, la ecuación de la regresión polinómica con dos variables se establece así:
+
+$$
+ medv = 65.20 -15.82*rm-0.19*(lstat*rm)+0.01*(lstat)^2+1.72*(rm)²
+$$
+
+Con esta ecuación, la predicción de datos para *medv* se observa:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_2vars.p <- predict(lmpoly_2vars,Test)
+data_reg <- data.frame(data_reg, RNL2_2vars = round(lmpoly_2vars.p,2))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_RNL2_2vars <- plot_ly(data = data_reg, x = ~lstat, y = ~rm) # Definición básica de la gráfica
+fig_RNL2_2vars <- fig_RNL2_2vars %>% add_trace(z = ~medv, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              size = 0,
+                              name = 'medv_real')
+fig_RNL2_2vars <- fig_RNL2_2vars %>% add_trace(z = ~RNL2_2vars, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              size = 0,
+                              name = 'medv_RNL2_2vars')
+fig_RNL2_2vars <- fig_RNL2_2vars %>% layout(title = list(text ='Regresión polinómica grado 2 - variables: lstat y rm',
+                                                    y = 0.98, x = 0.1))
+fig_RNL2_2vars
+```
+
+Los datos de la proyección de la variable *medv (en naranja)* parecen representar la dispersión de los valores reales de *medv* (en azul) de manera más cercana, en todo caso, la "precisión" en las predicciones puede cuantificarse con el calculo del RMSE que se presentará más adelante.
+
+#### **6.2.2 Regresión cuadrática con *lstat*, *rm y ptratio* como variables independientes**
+
+La ecuación del modelo de regresión no lineal grado 2 con tres variables independientes: *lstat*, *rm* y *ptratio*, para el ejercicio en desarrollo, se plantea así:
+
+$$
+ medv = \beta_0 +\beta_1*lstat+\beta_2*rm+\beta_3*ptratio+\beta_4*(lstat*rm*ptratio)+\beta_5*(lstat)^2+\beta_6*(rm)²+\beta_7*(ptratio)²
+$$
+
+Con esto, los coeficientes obtenidos:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_3vars <-lm(medv~lstat+rm+ptratio+I(lstat*rm*ptratio)+I(lstat^2)+I(rm^2)+I(ptratio^2),data = Train) 
+summary(lmpoly_3vars)
+```
+
+El resultado muestra una leve reducción en el error estándar residual así como un aumento en el coeficiente de R cuadrado ajustado con respecto al modelo de dos variables. Al revisar los resultados del p-valor, no todos los coeficientes tendrían un valor diferente a cero, en este caso los coeficientes para las variables lstat, ptratio y de la potencia cuadrada de ptratio (ptratio\^2), tienen un resultado en dicho valor superior a 0.05, por esto se plantea excluirlos del modelo y calcular nuevamente los coeficientes. En este orden de ideas, el nuevo modelo planteado sería:
+
+$$
+ medv = \beta_0 + \beta_1*rm + \beta_2*(lstat*rm*ptratio) + \beta_3*(lstat)^2+\beta_4*(rm)²
+$$
+
+Calculando los coeficientes:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_3vars <-lm(medv~rm+I(lstat*rm*ptratio)+I(lstat^2)+I(rm^2),data = Train) 
+summary(lmpoly_3vars)
+```
+
+Los resultados del error estándar residual y del valor R cuadrado ajustado son los mismo excluyendo las variables ya mencionadas, con esto, el modelo definitivo se podría expresar con la ecuación:
+
+$$
+ medv = 65.96 -16.47*rm-0.01*(lstat*rm*ptratio)+0.01*(lstat)^2+1.77*(rm)²
+$$
+
+Las predicciones con esta ecuación y su comparación con los datos reales que toma la variable independiente se observan así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_3vars.p <- predict(lmpoly_3vars,Test)
+data_reg <- data.frame(data_reg, RNL2_3vars = round(lmpoly_3vars.p,2))
+data_reg <- rownames_to_column(data_reg,"Ind")
+data_reg <- arrange(data_reg,medv)
+data_reg <- rownames_to_column(data_reg,"Obs")
+data_reg$Ind <- as.numeric(data_reg$Ind)
+data_reg$Obs <- as.numeric(data_reg$Obs)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_RNL2_3vars <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_RNL2_3vars <- fig_RNL2_3vars %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_RNL2_3vars <- fig_RNL2_3vars %>% add_trace(y = ~RNL2_3vars, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_3vars',
+                                           type="scatter")
+fig_RNL2_3vars <- fig_RNL2_3vars %>% layout(title = list(text ='Regresión polinómica grado 2 - variables: lstat, rm y ptratio',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_RNL2_3vars
+```
+
+Los valores de la predicción presentan un resultado que mantiene la tendencia de los valores reales que toma la variable dependiente, pese a esto, algunos de los puntos de la predicción se mantienen distantes de los valores reales. Se observan algunas rachas de puntos que se encuentran por debajo de los valores reales y otros por encima de los mismos (una de estas alcanza un total de 13 puntos: entre la observación 60 y la 72).
+
+#### **6.2.3 Regresión cuadrática con *lstat*, *rm, ptratio y chas0* como variables independientes**
+
+El último de los modelos de regresiones polinómicas incluye las variables *lstat*, *rm*, *ptratio* y *chas*, en este caso el modelo se definiría de la siguiente forma:
+
+$$
+medv = \beta_0 +\beta_1*lstat+\beta_2*rm+\beta_3*ptratio+\beta_4*chas+\beta_5*(lstat*rm*ptratio*chas0)+\beta_6*(lstat)^2+\beta_7*(rm)²+\beta_8*(ptratio)²+\beta_9*(chas0)^2
+$$
+
+El resultado del cálculo de los 10 coeficientes es:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+Xt <- as.data.frame(model.matrix(medv~., Train)[,-1])
+Train_mod <- data.frame(Xt,medv = Train$medv)
+lmpoly_4vars <-lm(medv~lstat+rm+ptratio+chas0+I(lstat*rm*ptratio*chas0)+I(lstat^2)+I(rm^2)+I(ptratio^2)+I(chas0^2),data = Train_mod) 
+summary(lmpoly_4vars)
+```
+
+Como resultado de este planteamiento -con la inclusión de una de la variable categórica (chas)-, se generan un modelo que "habilita" únicamente dos variables y el modelo obtenido se asemeja al obtenido en el punto 6.2.1 de este documento. Los p-valor orientan el planteamiento de un nuevo modelo, el cual incluiría las variables rm y lstat y sus pares cuadráticos sin incluir la interacción entre las mismas.
+
+$$
+ medv = \beta_0 +\beta_1*lstat+\beta_2*rm+\beta_3*(lstat)^2+\beta_4*(rm)²
+$$
+
+El calculo de los coeficientes de este modelo (con solo dos variables independientes) presenta estos resultados:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_4vars <-lm(medv~lstat+rm+I(lstat^2)+I(rm^2),data = Train) 
+summary(lmpoly_4vars)
+```
+
+Este resultado genera un error estándar residual mayor en 0.3 unidades (aproximadamente) respecto al modelo con 4 variables y un R cuadrado ajustado menor en en 0.03 unidades. Si bien estos resultados parecieran menos favorables, los cambios no son significantes si se considera la reducción en la complejidad del modelo. Así mismo, si se compara con el modelo expuesto en el numeral 6.2.1 existe un aumento de 0.1 unidades en el error estándar residual y una reducción de 0.01 unidades en el coeficiente de R cuadrado ajustado, resultados que evidencian que ambos modelos de dos variables presentan resultados prácticamente iguales.
+
+La ecuación con los coeficientes calculados quedaría así:
+
+$$
+ medv = 100.62 -1.53*lstat-24.26*rm+0.02*(lstat)^2+2.21*(rm)^2
+$$
+
+El resultado de las predicciones se observaría así:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+lmpoly_4vars.p <- predict(lmpoly_4vars,Test)
+data_reg <- arrange(data_reg,Ind)
+data_reg <- data.frame(data_reg, RNL2_4vars = round(lmpoly_4vars.p,2))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_RNL2_4vars <- plot_ly(data = data_reg, x = ~lstat, y = ~rm) # Definición básica de la gráfica
+fig_RNL2_4vars <- fig_RNL2_4vars %>% add_trace(z = ~medv, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              size = 0,
+                              name = 'medv_real')
+fig_RNL2_4vars <- fig_RNL2_4vars %>% add_trace(z = ~RNL2_4vars, # Agregar trazado de datos reales
+                              mode = 'markers',
+                              size = 0,
+                              name = 'medv_RNL2_2vars(2)')
+fig_RNL2_4vars <- fig_RNL2_4vars %>% layout(title = list(text ='Regresión polinómica grado 2 - variables: lstat y rm (inicial 4 var)',
+                                                    y = 0.98, x = 0.1))
+fig_RNL2_4vars
+```
+
+### 6.3. Comparación de los modelos de regresión cuadráticos
+
+En general, los modelos planteados presentan resultados muy similares en los valores de error cuadrático medio, siendo los valores más bajos aquellos en los que se incluyen al menos dos variables. La comparación de los resultados de la predicción de cada uno de estos se presenta en el siguiente gráfico:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+data_reg <- arrange(data_reg,Obs)
+fig_RNL2 <- plot_ly(data = data_reg, x = ~Obs) # Definición básica de la gráfica
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~medv, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_real',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~RNL2_lstat, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_lstat',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~RNL2_rm, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_rm',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~RNL2_2vars, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_2vars',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~RNL2_3vars, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_3vars',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% add_trace(y = ~RNL2_4vars, # Agregar trazado de datos reales
+                                           mode = 'lines+markers',
+                                           name = 'medv_RNL2_2vars(2)',
+                                           type="scatter")
+fig_RNL2 <- fig_RNL2 %>% layout(title = list(text ='Comparación predicciones Regresiones polinómicas grado 2',
+                                                        xaxis = list(title = 'Observaciones'),
+                                                        yaxis = list(title = 'medv'), 
+                                                    y = 0.98, x = 0.1))
+fig_RNL2
+```
+
+Si bien existen diferencias entre cada modelo para ciertas secciones de observaciones, en general los modelos tienen un comportamiento similar, siendo algo más evidente las diferencias de los modelos cuadráticos de una variable frente a los demás planteados en este capítulo. La cuantificación de estas diferencias se hacen mediante el cálculo del RMSE
+
+#### **6.3.1 Cálculo del RMSE**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+e_lstat <- round(rmse(data_reg$medv,data_reg$RNL2_lstat),2)
+e_rm <- round(rmse(data_reg$medv,data_reg$RNL2_rm),2)
+e_2vars <- round(rmse(data_reg$medv,data_reg$RNL2_2vars),2)
+e_3vars <- round(rmse(data_reg$medv,data_reg$RNL2_3vars),2)
+e_4vars <- round(rmse(data_reg$medv,data_reg$RNL2_4vars),2)
+
+RMSE_5 <- as.data.frame(rbind(RMSE_5,e_lstat,e_rm,e_2vars,e_3vars,e_4vars))
+RMSE_5[,1] <- c("01_RLS_lstat","02_RLS_rm","03_RLM_12vars"
+                ,"04_RLM_2vars","05_RLMI_2vars", "06_RLMI_3vars",
+                "07_RLMI_4vars", "08_Reg_L1", "09_Reg_L2",
+                "10_RNL2_lstat", "11_RNL2_rm", "12_RNL2_2vars",
+                "13_RNL2_3vars", "14_RNL2_2vars(2)")
+```
+
+Se calculas 5 valores de RMSE (para 5 modelos) que presentan resultados entre 4.02 y 5.58, valores que no resultan menores al modelo de regresión lineal múltiple con interacciones de 4 variables. De lo anterior se puede concluir que los modelos de polinómicos grado dos no son más adecuado para generan una explicación de la variabilidad del precio de las casas en Boston, es decir, no presentan un resultado mejor. Es de anotar que algunos de los modelos planteados en el capítulo si presentan mejores resultados a otros modelos lineales. El modelo de regresión cuadrática que incluye tres variables (*lstat*, *rm* y *ptratio*) tienen el RMSE más bajo, siendo este de 4.02.
+
+Al final de este capítulo se han planteado 14 modelos de regresión, los resultados del RMSE de estos 14 se observa así
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+fig_rmse <- plot_ly(RMSE_5, x = ~Modelo, y = ~RMSE, 
+                type = "scatter", 
+                mode = "markers+lines")
+fig_rmse <- fig_rmse %>% layout(xaxis = list(tickangle=-45))
+fig_rmse
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+write_csv(RMSE_5,"RMSE_5.csv")
+```

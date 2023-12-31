@@ -1,0 +1,66 @@
+---
+title: <h1>Comportamiento pruebas SABER 11</h1>
+subtitle: "Exploración, análisis y acercamiento al comportamiento de los resultados: 2018 a 2020"
+author: "Jairo Sánchez - jairoescrito@gmail.com"
+date: "2023-12-30"
+output:
+  html_notebook: 
+    theme: spacelab 
+    code_folding: hide
+    toc: true
+    toc_float:
+      collapsed: true
+runtime: shiny
+---
+
+# 1. Introducción
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+La prueba SABER 11 es un instrumento de evaluación estandarizada, que aplica el Estado Colombiano,  con el cual se mide la calidad de la educación formal media. Esta prueba se aplica a quienes están terminando o han terminado el nivel de educación media. La prueba está dividida en cinco áreas de cococimiento: Lectura Crítica, Matemáticas, Ciencias Sociales y Ciudadanas, Ciencias Naturales e Inglés. Información más detallada acerca de la prueba se encuentra en la página del <A HREF="https://www.icfes.gov.co/web/guest/acerca-del-examen-saber-11%C2%B0"> Instituto Colombiano para la Evaluación de la Educación - ICFES. </A><br><br>
+
+El presente documento pretende presentar los resultados de las pruebas aplicadas entre el año 2018 y 2020 partiendo de una exploración del conjunto de datos, detallando las variables que incluye y los principales parámetros estadísticos, posteriormente un análisis más detallado, desglosado por regiones geográficas, de las condiciones sociales, económicas y académicas de los estudiantes que presentaron la prueba, además de la los resultados de las prueba en cada uno de lo componentes. Finalmente se espera generar algunos modelos de clasificación que permitan explicar el comportamiento de los resultados de la prueba según las condiciones sociales, económicas y académicas de los estudiantes.<br><br>
+
+El conjunto de datos a utilizar en este documento está disponible en <A HREF="https://www.kaggle.com/datasets/sorelyss/icfes-colombia-20182021/data">Kaggle</A>, no obstante, en la página oficial del <A HREF="https://www.icfes.gov.co/web/guest/data-icfes">ICFES</A> es posible descargar este conjunto de datos (además de otras de las pruebas de evaluación de la calidad de la educación formal que realiza el Estado Colombiano) previo registro para acceso al banco de datos
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE,results='hide'}
+library(reticulate)
+```
+
+# 2. Exploración de los datos
+
+## 2.1 Estructura del conjunto de datos
+
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+import pandas as pd
+from shiny import ui, render, App
+```
+
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+# Carga archivos de icfes
+colegios = pd.read_csv('Dataset/colegios.csv',sep =',',low_memory=False)
+estudiantes = pd.read_csv('Dataset/estudiantes.csv',sep =',',low_memory=False)
+estudio = pd.read_csv('Dataset/estudio.csv',sep =',',low_memory=False)
+resultados = pd.read_csv('Dataset/resultados.csv',sep =',',low_memory=False)
+socieconomico = pd.read_csv('Dataset/socioeconomico.csv',sep =',',low_memory=False)
+ubicacion = pd.read_csv('Dataset/ubicacion.csv',sep =',',low_memory=False)
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+El conjunto de datos tiene un total de 84 columnas y 1'650.063 observaciones para un total de 138'605.292 de datos; no obstante el conjunto de datos incluye missing values que ascienden a un total de 7'081.402. <br> <br> 
+Para facilitar la maniulación y análisis, este conjunto de datos se divide en 6 subconjuntos de datos.<br> 
+1) Estudiantes: incluye datos que caracterizan al estudiante, entre estos, lugar de residensia, género, colegio en el que estudia (o estudió).<br> 
+2) Estudio: contiene datos del tiempo dedicado a la lectura, conectado a intenet, si el estudiante trabaja.<br> 
+3) Socioeconómico: registra datos relacionados con la situación socioeconómica del estudiante como lo es el estrato de la vivienda en donde vive, la cantidad de personas que componen el hogar, datos del trabajo y nivel de escolaridad de los padres, alimentación, entre otros.<br> 
+4) Resultados: detalla los resultados de la prueba saber en cada uno de sus componentes.<br> 
+5) Colegios: incluye datos de los establecimientos educativos que están relacionados con al menos uno de los estudiantes que presenta la prueba.<br> 
+6) Ubicación: datos de los departamenos y municipios del país, códigos y nombres de los entes territoriales.<br> 
+```
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+
+```
