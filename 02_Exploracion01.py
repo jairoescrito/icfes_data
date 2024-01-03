@@ -8,35 +8,29 @@ Created on Sat Dec 30 21:35:27 2023
 
 import pandas as pd
 
-# Carga archivos de icfes
-icfes = pd.read_csv('Dataset/icfes_data.csv',sep ='\t', low_memory=False)
-variables = icfes.columns
+# Dataset estudiantes
 
-# Creación de subconjunto de datos de estudiantes
-estudiantes = icfes.iloc[:,[0,1,2,3,4,5,7,8,9,11,37,54]]
-
-
-
-
-
-
-
-
-estudiantes.columns = ['Consecutivo_Est','Periodo','Tipo_Documento','Nacionalidad','Genero',
-           'Fecha_Nacimiento','Pais_Residencia','Etnia','Cod_Departamento',
-           'Cod_Municipio','Cod_Icfes_Colegio','Privado_Libertad']
-
-
+estudiantes = pd.read_csv('Dataset/estudiantes.csv',sep =',', low_memory=False)
+ubicaciones = pd.read_csv('Dataset/ubicacion.csv',sep =',', low_memory=False)
+# Modificación del tipo de identificación para facilitar su entendimiento
 estudiantes.Tipo_Documento = estudiantes.Tipo_Documento.replace(['CC', 'CE', 'CR', 'PC', 'PE', 'TI', 'NES', 
                                                                  'PEP', 'RC', 'CCB','NIP', 'NUIP', 'V'],
                                                                 ["Cedula_Ciudadania","Cedula_Extranjeria","Otro","Otro","Otro",
                                                                  "Tarjeta_Identidad","Otro","Permiso_Esp_Permanencia","Registro_Civil",
                                                                  "Otro","Numero_Id_Personal","Numero_Unico_Id_Personal","Otro"])
+estudiantes.info()
+# Agregar fechas de presentación de las pruebas 
+periodos = estudiantes.Periodo.unique().tolist()
+fechas = ['07/11/2020','11/08/2019','10/03/2019','25/02/2018','12/08/2018','18/10/2020']
+cortes = pd.DataFrame({'Periodo':periodos, 'Fecha_Prueba':fechas})
+cortes.info()
+estudiantes = pd.merge(estudiantes,cortes,on='Periodo',how='left') # Incluir en el dataset de estudiantes la fecha de presentación de examen
+del(cortes,fechas,periodos)
 
 
-
-estudiantes.to_csv('Dataset/estudiantes.csv',sep=',', index=False)
-
+# Calcular edades de los estudiantes al momento de presentación de la prueba
+estudiantes.Fecha_Nacimiento.isnull().sum() # Las fechas de naciomiento no tienen nulos
+estudiantes.Fecha_Prueba.isnull().sum() # Las fechas de pruebas no tienen datos nulos
 
 
 

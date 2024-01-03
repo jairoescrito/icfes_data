@@ -68,43 +68,41 @@ colegios.to_csv('Dataset/colegios.csv',sep=',', index=False)
 
 # Data ubicación
 
-ubicacion = icfes.iloc[:,[10,9,12,11]] # Extraer datos de ubicación del dataset original
+ubicacion = icfes.iloc[:,[10,9,12,11]] # Extraer datos de ubicación del dataset original de icfes
 ubicacion.columns = ['Cod_Departamento','Departamento', # Ajustar los nombres
                      'Cod_Municipio', 'Municipio']
 ubicacion = ubicacion.drop_duplicates() # Eliminar duplicados
-ubicacion = ubicacion.sort_values(by = 'Cod_Municipio')
-ubicacion.dropna(inplace = True, how = 'all')
-ubicacion.Departamento = ubicacion.Departamento.str.title()
+ubicacion.dropna(inplace = True, how = 'all') # Eliminar filas de NaN
+ubicacion.Departamento = ubicacion.Departamento.str.title() # Cambiar Mayúsculas a tipo Nombre Propio
 ubicacion.Municipio = ubicacion.Municipio.str.title()
 
-# El merge con el df estudiantes está generando inconsistencias
+# El merge con el df estudiantes está generando inconsistencias, identificación de la inconsistencia
 len(ubicacion.Municipio.unique()) # 1034 municipios únicos frente a 1120 de la lista, esto es válido porque hay municipios con el mismo nombre
 len(ubicacion.Cod_Municipio.unique()) # 1119 municipios únicos frente a 1120 de la lista, deberían ser exactamente los mismos, hay dos municipios con el mismo código
-ubicacion.Municipio = ubicacion.Municipio.astype('category')
 ubicacion.Municipio.info()
 ubicacion.Municipio.describe()
 ubicacion.Cod_Municipio = ubicacion.Cod_Municipio.astype('category')
 ubicacion.Cod_Municipio.info()
 ubicacion.Cod_Municipio.describe() # El muncipio con código 11001 está repetido
 ubicacion.Cod_Municipio.index[ubicacion.Cod_Municipio == 11001] # Filas de las dos ubicaciones
-ubicacion.loc[ubicacion.Cod_Municipio.index[ubicacion.Cod_Municipio == 11001][0]]
+ubicacion.loc[ubicacion.Cod_Municipio.index[ubicacion.Cod_Municipio == 11001][0]] # Adentro de los corchetes se identifica el índice de la primera fila del repetido
 ubicacion.loc[ubicacion.Cod_Municipio.index[ubicacion.Cod_Municipio == 11001][1]] # Existen dos formas diferentes en las que está escrita Bogotá en el departamento
+ubicacion.drop([ubicacion.Cod_Municipio.index[ubicacion.Cod_Municipio == 11001][0]], axis=0, inplace=True) # Eliminar la fila identificada como repetida
 
+# Agregar región al dataset de estudiantes
 
-
-
-data_Colombia = pd.read_csv('Dataset/Colombia_2023.csv',thousands= '.')# Leer base de datos municipios que incluye regiones
+data_Colombia = pd.read_csv('Dataset/Colombia_2023.csv',thousands= '.') # Leer dataset de municipios que incluye regiones
 data_Colombia.columns = ['Region','Cod_Departamento','Departamento',
                      'Cod_Municipio', 'Municipio' ]
-regiones = data_Colombia.iloc[:,[0,1]].drop_duplicates()
-
-ubicacion = ubicacion.merge(regiones, on = 'Cod_Departamento', how = 'left') # Incluir dato de regiones
-ubicacion.Departamento = ubicacion.Departamento.str.title()
-ubicacion.Municipio = ubicacion.Municipio.str.title()
-ubicacion.isnull().sum()
-ubicacion = ubicacion.dropna(how='all')
-ubicacion.iloc[ubicacion.index[ubicacion['Region'].isna()],4] = 'Extranjero'
-
+regiones = data_Colombia.iloc[:,[0,1]].drop_duplicates() # Al excluir los municipios, los departamentos se repiten, por eso se eliminan duplicados
+ubicacion = pd.merge(ubicacion,regiones,on = 'Cod_Departamento',how='left') # Agregar a ubicación la columna de regiones
+ubicacion.isnull().sum() # Existe un NaN posterior a la unión y se debe al tipo "Extranjero" en los datos, que quedan sin region
+ubicacion.iloc[ubicacion.index[ubicacion['Region'].isna()],4] = 'Extranjero' # Se reemplaza el NaN por la palabra "Extranjero"
+ubicacion.info()
+ubicacion.Cod_Departamento = ubicacion.Cod_Departamento.astype('category')
+ubicacion.Departamento = ubicacion.Departamento.astype('category')
+ubicacion.Municipio = ubicacion.Municipio.astype('category')
+ubicacion.Region = ubicacion.Region.astype('category')
 
 ubicacion.to_csv('Dataset/ubicacion.csv',sep=',', index=False)
 
