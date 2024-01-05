@@ -44,6 +44,7 @@ from datetime import datetime # manejo de fechas
 from dateutil.relativedelta import relativedelta # Cálculos con fechas
 import plotly.express as px # Gráficos
 import plotly.offline as py
+import numpy as np
 from shiny import ui, render, App # Creación de shinyapps
 ```
 
@@ -71,7 +72,7 @@ Para facilitar la maniulación y análisis, este conjunto de datos se divide en 
 6) Ubicación: datos de los departamenos y municipios del país, códigos y nombres de los entes territoriales.<br><br>
 Los nombres de las variables fueron modificados para facilitar su entendimiento.
 ```
-## 2.1.1.  Subconjunto 'Estudiantes'
+## 2.1.1. Subconjunto 'Estudiantes'
 
 ```{=html}
 <style>
@@ -130,7 +131,7 @@ del(cortes,fechas,periodos) # Eliminar variables temporales
 <style>
 body {text-align: justify}
 </style>
-Los resultados obtenidos muestran alún tipo de conflicto en la columna "Fecha_Nacimiento", la variable no 'aceptó' la modificación a dato tipo datetime. La revisión de los datos nulos (de todo el subconjunto) y la distribución de los datos de edades calculadas muestran lo siguiente: <br>
+Los resultados obtenidos muestran algún tipo de conflicto en la columna "Fecha_Nacimiento", la variable no 'aceptó' la modificación a dato tipo datetime. La revisión de los datos nulos (de todo el subconjunto) y la distribución de los datos de edades calculadas muestran lo siguiente: <br>
 ```
 ```{python echo=FALSE, message=FALSE, warning=FALSE}
 # Verificación de missing values
@@ -145,14 +146,51 @@ round(estudiantes.Edad.describe(),2)
 <style>
 body {text-align: justify}
 </style>
-1) Cuatro variables presentan NaN (missing values o valores faltantes) de las cuales 'Etnia' es la de mayor cantidad, algunos estudiantes no tienen información de ubicación geográfica (lugar de residencia).
-2) La variable calculada 'Edad' no presenta NaN, no obstante presenta datos incongruentes. Si bien el promedio de edad es de 22 años, la desviación estándar es de 93 años, dato que no presenta lógica en este contexto. Adicionalmente, se observa un valor máximo de edad de 2019, dato que resulta erroneo. Con estos datos se concluye que existen deficiencias en los datos de la variable 'Fecha_Nacimiento'
+1) Cuatro variables presentan NaN (missing values o valores faltantes) de las cuales 'Etnia' es la de mayor cantidad, algunos estudiantes no tienen información de ubicación geográfica (lugar de residencia).<br>
+2) La variable calculada 'Edad' no presenta NaN, no obstante presenta datos incongruentes. Si bien el promedio de edad es de 22 años, la desviación estándar es de 93 años, dato que no presenta lógica en este contexto. Adicionalmente, se observa un valor máximo de edad de 2019, dato que resulta erroneo. Por otra parte, el valor mínimo en la edad es 0, lo cual implica datos no lógicos. Con estos datos se concluye que existen deficiencias en los datos de la variable 'Fecha_Nacimiento'. <br>
 ```
 ```{python echo=FALSE, message=FALSE, warning=FALSE}
-fig = px.box(estudiantes.Edad, y="Edad")
+fig = px.box(estudiantes.Edad, y="Edad",
+             title="Dispersión de los datos de la edad de los estudiantes")
 py.plot(fig, filename = "box_Edad.html", auto_open=False)
 ```
 
-```{R echo=FALSE, message=FALSE, warning=FALSE}
+```{R echo=FALSE, message=FALSE, warning=FALSE,}
 htmltools::includeHTML("box_Edad.html")
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+No se tiene un parámetro establecido para las edades que deberían tener los estudiantes al momento de presentar la prueba. En este punto se deciden definir dos límites:<br>
+1) Límite superior: 79 años. Si bien no existe un límite de edad como tal para la presentación de la prueba saber 11, es poco probable que ciudadanos con edades superiores a 79 años la presenten. <br>
+2) Límite inferior: 13 año. Al igual que el límite superior, podría presentarse que existan estudiantes menores de 13 años presentando la prueba saber, no obstante, se asume poco probable que un estudiante menor de 13 años este finalizando los estudios de bachillerato.<br><br>
+
+Vale la pena aclarar que esta decisiones podrían estar excluyendo valores reales y válidos de edad, no obstante, resulta complejo poder diferenciar los datos reales y no válidos.
+```
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+temp = estudiantes[estudiantes.Edad >= 80].index # Estudiantes con edades superiores o iguales a 80 años
+estudiantes.Fecha_Nacimiento[temp] = np.nan
+estudiantes.Edad[temp] = np.nan
+temp = estudiantes[estudiantes.Edad <= 12].index # Estudiantes con edades inferiores o iguales a 12 años
+estudiantes.Fecha_Nacimiento[temp] = np.nan
+estudiantes.Edad[temp] = np.nan
+```
+
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+# Resumen de los datos luego de los ajustes
+estudiantes.isna().sum()
+round(estudiantes.Edad.describe(),2)
+```
+
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+figb = px.box(estudiantes.Edad, y="Edad",
+             title="Dispersión de los datos de la edad de los estudiantes -ajustado-")
+figb
+py.plot(figb, filename = "boxb_Edad.html", auto_open=False)
+```
+
+```{R echo=FALSE, message=FALSE, warning=FALSE,}
+htmltools::includeHTML("boxb_Edad.html")
 ```
