@@ -1,16 +1,19 @@
 ---
-title: <h1>Comportamiento pruebas SABER 11</h1>
-subtitle: "Exploración, análisis y acercamiento al comportamiento de los resultados: 2018 a 2020"
+title: "<h1>Comportamiento pruebas SABER 11</h1>"
 author: "Jairo Sánchez - jairoescrito@gmail.com"
 date: "2023-12-30"
 output:
-  html_notebook: 
-    theme: spacelab 
+  html_document:
+    toc: true
+    df_print: paged
+  html_notebook:
+    theme: spacelab
     code_folding: hide
     toc: true
     toc_float:
       collapsed: true
-runtime: shiny
+subtitle: 'Exploración, análisis y acercamiento al comportamiento de los resultados:
+  2018 a 2020'
 ---
 
 # 1. Introducción

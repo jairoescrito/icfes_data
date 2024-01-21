@@ -28,7 +28,6 @@ estudiantes.Tipo_Documento = estudiantes.Tipo_Documento.replace(['CC', 'CE', 'CR
                                                                  "Otro","Numero_Id_Personal","Numero_Unico_Id_Personal","Otro"])
 ##
 # Revisión del tipos de datos
-estudiantes.info()
 ##
 # Inclusión fechas de presentación de las pruebas 
 periodos = estudiantes.Periodo.unique().tolist() # Crear una lista de los periodos de presentación de las pruebas
@@ -73,7 +72,7 @@ figb = px.box(estudiantes.Edad, y="Edad",
              title="Dispersión de los datos de la edad de los estudiantes -ajustado-")
 figb
 ##
-
+# Imputación de Missing Values
 
 
 

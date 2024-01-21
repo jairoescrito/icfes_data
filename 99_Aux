@@ -19,3 +19,6 @@ edad.years
 fecha_nacimiento = datetime.strptime("11/02/1983", "%d/%m/%Y")
 edad = relativedelta(datetime.now(), fecha_nacimiento)
 edad.years
+
+
+variables = estudiantes.columns

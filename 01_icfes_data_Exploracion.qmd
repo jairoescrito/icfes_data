@@ -1,0 +1,196 @@
+---
+title: <h1>Comportamiento pruebas SABER 11</h1>
+subtitle: "Exploración, análisis y acercamiento al comportamiento de los resultados: 2018 a 2020"
+author: "Jairo Sánchez - jairoescrito@gmail.com"
+date: "2023-12-30"
+format: 
+  html:
+    theme: spacelab
+    toc: true
+    toc-title: "Tabla de contenido"
+    toc-location: left
+    toc-expand: true
+    toc-depth: 4
+execute:
+  echo: false
+  warning: false
+  freeze: auto
+editor: visual
+jupyter: python3
+---
+
+# 1. Introducción
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+La prueba SABER 11 es un instrumento de evaluación estandarizada, que aplica el Estado Colombiano,  con el cual se mide la calidad de la educación formal media. Esta prueba se aplica a quienes están terminando o han terminado el nivel de educación media. La prueba está dividida en cinco áreas de cococimiento: Lectura Crítica, Matemáticas, Ciencias Sociales y Ciudadanas, Ciencias Naturales e Inglés. Información más detallada acerca de la prueba se encuentra en la página del <A HREF="https://www.icfes.gov.co/web/guest/acerca-del-examen-saber-11%C2%B0"> Instituto Colombiano para la Evaluación de la Educación - ICFES. </A><br><br>
+
+Este documento pretende presentar los resultados de las pruebas aplicadas entre el año 2018 y 2020 partiendo de una exploración del conjunto de datos, detallando las variables que incluye y los principales parámetros estadísticos, posteriormente un análisis más detallado, desglosado por regiones geográficas, de las condiciones sociales, económicas y académicas de los estudiantes que presentaron la prueba, además de la los resultados de las prueba en cada uno de lo componentes. Finalmente se espera generar algunos modelos de clasificación que permitan explicar el comportamiento de los resultados de la prueba según las condiciones sociales, económicas y académicas de los estudiantes.<br><br>
+
+El conjunto de datos a utilizar en este documento está disponible en <A HREF="https://www.kaggle.com/datasets/sorelyss/icfes-colombia-20182021/data">Kaggle</A>, no obstante, en la página oficial del <A HREF="https://www.icfes.gov.co/web/guest/data-icfes">ICFES</A> es posible descargar este conjunto de datos (además de otras de las pruebas de evaluación de la calidad de la educación formal que realiza el Estado Colombiano) previo registro para acceso al banco de datos.<br>
+
+Los scripts ejecutados para el procesamiento de los datos así como el archivo de creación de este documento están disponibles en <A HREF="https://github.com/jairoescrito/icfes_data">el repositorio GitHub</A>
+```
+# 2. Exploración de los datos
+
+## 2.1 Estructura del conjunto de datos
+
+```{python}
+#| echo: false
+# Librerías de Python
+import pandas as pd # manipulación de DataFrames
+from datetime import datetime # manejo de fechas
+from dateutil.relativedelta import relativedelta # Cálculos con fechas
+import plotly.express as px # Gráficos
+import numpy as np
+from itables import show
+from itables import init_notebook_mode
+init_notebook_mode(all_interactive=True)
+```
+
+```{python}
+#| echo: false
+# Carga archivos de icfes
+#colegios = pd.read_csv('Dataset/colegios.csv',sep =',',low_memory=False)
+estudiantes = pd.read_csv('Dataset/estudiantes.csv',sep =',',low_memory=False) #low memory false evita conflictos con dtype de columnas
+#estudio = pd.read_csv('Dataset/estudio.csv',sep =',',low_memory=False)
+#resultados = pd.read_csv('Dataset/resultados.csv',sep =',',low_memory=False)
+#socieconomico = pd.read_csv('Dataset/socioeconomico.csv',sep =',',low_memory=False)
+ubicacion = pd.read_csv('Dataset/ubicacion.csv',sep =',',low_memory=False)
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+El conjunto de datos tiene un total de 84 columnas y 1'650.063 observaciones para un total de 138'605.292 de datos; no obstante el conjunto de datos incluye missing values que ascienden a un total de 7'081.402. <br> <br> 
+Para facilitar la maniulación y análisis, este conjunto de datos se divide en 6 subconjuntos de datos.<br> 
+1) Estudiantes: incluye datos que caracterizan al estudiante, entre estos, lugar de residensia, género, colegio en el que estudia (o estudió).<br> 
+2) Estudio: contiene datos del tiempo dedicado a la lectura, conectado a intenet, si el estudiante trabaja.<br> 
+3) Socioeconómico: registra datos relacionados con la situación socioeconómica del estudiante como lo es el estrato de la vivienda en donde vive, la cantidad de personas que componen el hogar, datos del trabajo y nivel de escolaridad de los padres, alimentación, entre otros.<br> 
+4) Resultados: detalla los resultados de la prueba saber en cada uno de sus componentes.<br> 
+5) Colegios: incluye datos de los establecimientos educativos que están relacionados con al menos uno de los estudiantes que presenta la prueba.<br> 
+6) Ubicación: datos de los departamenos y municipios del país, códigos y nombres de los entes territoriales.<br><br>
+Los nombres de las variables fueron modificados para facilitar su entendimiento.
+```
+## 2.1.1. Subconjunto 'Estudiantes'
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+Este subconjunto se crea extrayendo 12 variables del dataset original, para algunas de estas se realizan modificaciones. Adicionalmente, se incluyen variables nuevas para facilitar su análisis:<br>
+1) Se reescriben los valores disponibles en la columna 'Tipo_Documento', se eliminan las siglas y se incluye el nombre completo
+2) Se incluye la fecha de presentación de la prueba. 
+3) Se calcula la edad de los estudiantes al momento de presentar la prueba comparando la fecha de nacimiento la fecha de nacimiento (disponible en el dataset original) y la fecha de la prueba. Antes de realizar el cálculo se verifican si existen missing values en las fechas, encontrando que no existen.<br><br>
+```
+```{python}
+# Trabajo con el dataset de estudiantes
+
+# Modificación del tipo de identificación para facilitar su entendimiento
+estudiantes.Tipo_Documento = estudiantes.Tipo_Documento.replace(['CC', 'CE', 'CR', 'PC', 'PE', 'TI','NES', 'PEP', 'RC', 'CCB','NIP', 'NUIP', 'V'],
+ ["Cedula_Ciudadania","Cedula_Extranjeria","Otro","Otro","Otro","Tarjeta_Identidad","Otro","Permiso_Esp_Permanencia","Registro_Civil","Otro","Numero_Id_Personal","Numero_Unico_Id_Personal","Otro"])
+estudiantes.info()
+```
+
+```{python}
+estudiantes.head()
+```
+
+```{=html}
+<br><br>
+```
+```{python}
+# Inclusión fechas de presentación de las pruebas 
+periodos = estudiantes.Periodo.unique().tolist() # Crear una lista de los periodos de presentación de las pruebas
+fechas = ['07/11/2020','11/08/2019','10/03/2019','25/02/2018','12/08/2018','18/10/2020'] # Fechas de presentación de la prueba por periodo consultadas en internet
+cortes = pd.DataFrame({'Periodo':periodos, 'Fecha_Prueba':fechas}) # Data frame que relaciona las fechas con los periodos
+estudiantes = pd.merge(estudiantes,cortes,on='Periodo',how='left') # Incluir en el dataset de estudiantes la fecha de presentación de examen
+cortes
+```
+
+```{=html}
+<br><br>
+```
+```{python}
+# Calculo de edades de los estudiantes al momento de presentación de la prueba
+estudiantes.Fecha_Nacimiento = pd.DataFrame(datetime.strptime(x, "%d/%m/%Y") for x in estudiantes.Fecha_Nacimiento) # Convertir fecha a datetime
+estudiantes.Fecha_Prueba = pd.DataFrame(datetime.strptime(x,"%d/%m/%Y") for x in estudiantes.Fecha_Prueba) # Convertir a fecha datetime
+estudiantes['Edad'] = pd.DataFrame(relativedelta(estudiantes.Fecha_Prueba[i],estudiantes.Fecha_Nacimiento[i]).years for i in range(len(estudiantes))) # Calculo de la edad
+# Revisión del tipos de datos luego de los primeros ajustes
+del(cortes,fechas,periodos) # Eliminar variables temporales
+estudiantes.info()
+```
+
+```{python}
+estudiantes.head(10)
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+<br><br>
+Los resultados obtenidos muestran algún tipo de conflicto en la columna "Fecha_Nacimiento", la variable no 'aceptó' la modificación a dato tipo datetime. La revisión de los datos nulos (de todo el subconjunto) y la distribución de los datos de edades calculadas muestran lo siguiente: <br><br>
+```
+```{python}
+# Verificación de missing values
+estudiantes.isna().sum()
+##
+# Revisión de los datos de edades
+round(estudiantes.Edad.describe(),2)
+##
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+<br><br>
+1) Cuatro variables presentan NaN (missing values o valores faltantes) de las cuales 'Etnia' es la de mayor cantidad, algunos estudiantes no tienen información de ubicación geográfica (lugar de residencia).<br>
+2) La variable calculada 'Edad' no presenta NaN, no obstante presenta datos incongruentes. Si bien el promedio de edad es de 22 años, la desviación estándar es de 93 años, dato que no presenta lógica en este contexto. Adicionalmente, se observa un valor máximo de edad de 2019, dato que resulta erroneo. Por otra parte, el valor mínimo en la edad es 0, lo cual implica datos no lógicos. Con estos datos se concluye que existen deficiencias en los datos de la variable 'Fecha_Nacimiento'. <br>
+```
+```{python}
+figa = px.box(estudiantes.Edad, y="Edad",
+             title="Dispersión de los datos de la edad de los estudiantes")
+figa.show()
+```
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+No se tiene un parámetro establecido para las edades que deberían tener los estudiantes al momento de presentar la prueba. En este punto se deciden definir dos límites:<br>
+1) Límite superior: 79 años. Si bien no existe un límite de edad como tal para la presentación de la prueba saber 11, es poco probable que ciudadanos con edades superiores a 79 años la presenten. <br>
+2) Límite inferior: 13 año. Al igual que el límite superior, podría presentarse que existan estudiantes menores de 13 años presentando la prueba saber, no obstante, se asume poco probable que un estudiante menor de 13 años este finalizando los estudios de bachillerato.<br><br>
+
+Vale la pena aclarar que esta decisiones podrían estar excluyendo valores reales y válidos de edad, no obstante, resulta complejo poder diferenciar los datos reales y no válidos.<br><br>
+```
+```{python}
+temp = estudiantes[estudiantes.Edad >= 80].index # Estudiantes con edades superiores o iguales a 80 años
+estudiantes.Fecha_Nacimiento[temp] = np.nan
+estudiantes.Edad[temp] = np.nan
+temp = estudiantes[estudiantes.Edad <= 12].index # Estudiantes con edades inferiores o iguales a 12 años
+estudiantes.Fecha_Nacimiento[temp] = np.nan
+estudiantes.Edad[temp] = np.nan
+```
+
+```{python}
+# Resumen de los datos luego de los ajustes
+estudiantes.isna().sum()
+```
+
+```{=html}
+<br><br>
+```
+```{python}
+round(estudiantes.Edad.describe(),2)
+```
+
+```{python}
+figb = px.box(estudiantes.Edad, y="Edad",
+             title="Dispersión de los datos de la edad de los estudiantes -ajustado-")
+figb.show()
+```
